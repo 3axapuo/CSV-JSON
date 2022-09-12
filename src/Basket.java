@@ -2,7 +2,7 @@ import java.io.*;
 import java.util.Arrays;
 
 // ЗАДАЧА №1, Создайте класс Basket, объект которого будет представлять себе покупательскую корзину.
-public class Basket {
+public class Basket implements Serializable { // Класс Basket реализует (implement) интерфейс Serializable, который необходим для записи в ObjectOutputStream.
     public String[] products;
     public int[] prices;
     protected int[] cart;
@@ -22,11 +22,12 @@ public class Basket {
             System.out.println("☑ Товар '" + products[productNum] + "' в количестве " + amount + " добавлен в корзину!");
         }
 
-        try {
-            saveTxt(new File("basket.txt"));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        //try {
+        //saveTxt(new File("basket.txt"));
+        saveBin(new File("basket.bin"));
+        //} catch (IOException e) {
+        //    throw new RuntimeException(e);
+        //}
     }
 
     public void printCart() { // ЗАДАЧА №1, метод вывода на экран покупательской корзины.
@@ -46,9 +47,30 @@ public class Basket {
         System.out.println("Итого: " + sumProducts);
     }
 
+    //ЗАДАЧА №2, Добавьте метод saveBin(File file) для сохранения в файл в бинарном формате.
+    public void saveBin(File file) {
+        try (OutputStream fileOut = new FileOutputStream(file)) {
+            ObjectOutputStream objectOut = new ObjectOutputStream(fileOut);
+            objectOut.writeObject(Basket.this);
+        } catch (IOException e) {
+            System.out.println("Сохранить текущую корзину в файл \"basket.bin\" не удалось!");
+        }
+    }
+
+    //ЗАДАЧА №2, Добавьте метод static loadFromBinFile(File file) для загрузки корзины из бинарного файла.
+    public static Basket loadFromBinFile(File file) {
+        try (InputStream fileIn = new FileInputStream(file)) {
+            ObjectInputStream ObjectIn = new ObjectInputStream(fileIn);
+            return (Basket) ObjectIn.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Загрузить сохраненную корзину из файла \"basket.bin\" не удалось!");
+        }
+        return null;
+    }
+
     // ЗАДАЧА №1, метод сохранения корзины в текстовый файл;
     // использовать встроенные сериализаторы нельзя;
-    public void saveTxt(File textFile) throws IOException {
+    public void saveTxt(File textFile) {
         try (PrintWriter out = new PrintWriter(textFile)) {
             out.print("Продукт, количество, цена \n");
             for (int i = 0; i < cart.length; i++) {

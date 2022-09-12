@@ -6,9 +6,15 @@ public class Main {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        File textFile = new File("basket.txt");
+        //File textFile = new File("basket.txt");
+
+        // ЗАДАЧА №2, Используйте для этого сериализацию и десериализацию. Замените в main сохранение
+        // и загрузку из текстового файла на бинарный (название пусть будет basket.bin).
+        File textFile = new File("basket.bin");
+
         if (textFile.exists()) {
-            basket = Basket.loadFromTxtFile(textFile);
+            //basket = Basket.loadFromTxtFile(textFile);
+            basket = Basket.loadFromBinFile(textFile);
         } else {
             basket = new Basket(setProduct(), setPrices());
         }
