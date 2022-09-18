@@ -1,25 +1,33 @@
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
 
 public class Main {
-    private static final String CSV_FILE_PATH = "CSV-XML-JSON/src/main/resources/log.csv";
-    private static final String JSON_FILE_PATH = "CSV-XML-JSON/src/main/resources/JSON/basket.json";
+    private static final String XML_FILE_PATH = "shop.xml"; // ЗАДАЧА №2, В корне вашего проекта разместите: shop.xml.
+
     static Basket basket;
     static ClientLog clientLog;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException, SAXException, ParserConfigurationException {
         Scanner scanner = new Scanner(System.in);
+        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder(); // создаем строителя документа
+        Document docXML = documentBuilder.parse(XML_FILE_PATH); // создаем дерево DOM документа из файла
+
+        Settings settings = new Settings(3, 3, 2);
+        settings.read(docXML.getDocumentElement()); // передаем в класс считывание настроек (значений)
 
         clientLog = new ClientLog();
-        clientLog.importAsCSV(new File(CSV_FILE_PATH)); // импортируем сохраненный журнал
+        clientLog.importAsCSV(new File(settings.log[1])); // импортируем сохраненный журнал
         basket = new Basket(setProduct(), setPrices()); // создаем продукты и цены по умолчанию
 
         // ЗАДАЧА №1, Также вместо вызова метода saveTxt в методе main сериализуйте корзину
@@ -31,23 +39,14 @@ public class Main {
         JSONArray products = new JSONArray(); // JSON, массив приобретенных продуктов
         JSONArray amount = new JSONArray(); // JSON, массив количество приобретенных продуктов
 
-        File textFile = new File(JSON_FILE_PATH);
-        if (textFile.exists()) { // если файл существуют, считываем их
-            JSONParser parser = new JSONParser();
-            try {
-                Object obj = parser.parse(new FileReader(JSON_FILE_PATH));
-                JSONObject jsonObject = (JSONObject) obj;
-                products = (JSONArray) jsonObject.get("products");
-                amount = (JSONArray) jsonObject.get("amount");
-                System.out.println("Ваша корзина загружена и составляет: ");
-                for (int i = 0; i < products.size(); i++) { // заполняем корзину
-                    basket.addToCart(Integer.parseInt(products.get(i).toString()),
-                            Integer.parseInt(amount.get(i).toString()));
-                }
-            } catch (IOException e) {
-                System.out.println("⊠ ОШИБКА: Файл " + JSON_FILE_PATH + " не найден!");
-            } catch (ParseException e) {
-                System.out.println("⊠ ОШИБКА: Во время чтения данных из " + JSON_FILE_PATH + " произошла ошибка!");
+        File textFile = new File(settings.load[1]);
+        if (textFile.exists() && settings.load[0].equals("true")) { // если файл существуют И верна настройка, считываем корзину
+            if (settings.load[2].equals("json")) {
+                JSON json = new JSON();
+                amount = json.createJSON(new JSONParser(), settings, products, amount, basket);
+            }
+            if (settings.load[2].equals("text")) {
+                basket = basket.loadFromTxtFile(textFile);
             }
         }
         System.out.println("Список возможных товаров для покупки: ");
@@ -75,13 +74,19 @@ public class Main {
         objBasket.put("products", products); // JSON, добавляем массив продуктов
         objBasket.put("amount", amount); // JSON, добавляем массив количества продуктов
 
-        try (FileWriter file = new FileWriter(JSON_FILE_PATH)) {
-            file.write(objBasket.toJSONString());
-            objBasket.clear();
-        } catch (IOException e) {
-            System.out.println("⊠ ОШИБКА: Сохранить текущую корзину в файл " + JSON_FILE_PATH + " не удалось!");
+        if (settings.save[2].equals("json")) {
+            try (FileWriter file = new FileWriter(settings.save[1])) {
+                file.write(objBasket.toJSONString());
+                objBasket.clear();
+            } catch (IOException e) {
+                System.out.println("⊠ ОШИБКА: Сохранить текущую корзину в файл " + settings.save[1] + " не удалось!");
+            }
         }
-        clientLog.exportAsCSV(new File(CSV_FILE_PATH)); // CSV, создаем файл журнала
+        if (settings.save[2].equals("text")) {
+            basket.saveTxt(textFile);
+        }
+        if (settings.log[0].equals("true"))
+            clientLog.exportAsCSV(new File(settings.log[1])); // CSV, создаем файл журнала
         scanner.close();
     }
 

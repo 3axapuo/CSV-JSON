@@ -25,7 +25,7 @@ public class Basket implements Serializable { // Класс Basket реализ�
 
         //try {
         //saveTxt(new File("basket.txt"));
-        saveBin(new File("basket.bin"));
+        //saveBin(new File("basket.bin"));
         //} catch (IOException e) {
         //    throw new RuntimeException(e);
         //}
@@ -104,7 +104,10 @@ public class Basket implements Serializable { // Класс Basket реализ�
                 line = reader.readLine(); // переход на следующую строку
             }
             Basket basket = new Basket(product, price); // создаем корзину из полученных массивов
-            basket.cart = cart;
+            for (int i = 0; i < cart.length; i++) { // заносим количество каждого товара в корзине
+                basket.addToCart(i, cart[i]);
+            }
+            //basket.cart = cart;
             return basket;
         } catch (
                 IOException e) {
@@ -132,9 +135,4 @@ public class Basket implements Serializable { // Класс Basket реализ�
         newarr[n] = x;
         return newarr;
     }
-
-    public int[] getCart() {
-        return cart;
-    }
-
 }
